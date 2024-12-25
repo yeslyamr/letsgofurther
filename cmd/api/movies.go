@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"letsgofurther/internal/data"
+	"letsgofurther/internal/validator"
 	"net/http"
 	"strconv"
 	"time"
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
+	// Read JSON
 	var input struct {
 		Title   string       `json:"title"`
 		Year    int32        `json:"year"`
@@ -20,6 +22,21 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	// Validation
+	v := validator.New()
+
+	movie := &data.Movie{
+		Title:   input.Title,
+		Year:    input.Year,
+		Runtime: input.Runtime,
+		Genres:  input.Genres,
+	}
+
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
