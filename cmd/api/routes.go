@@ -14,7 +14,7 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/v1/healthcheck", app.healthcheckHandler).Methods("GET")
 	router.HandleFunc("/v1/movies", app.createMovieHandler).Methods("POST")
 	router.HandleFunc("/v1/movies/{id}", app.showMovieHandler).Methods("GET")
-	router.HandleFunc("/v1/movies/{id}", app.updateMovieHandler).Methods("PUT")
+	router.HandleFunc("/v1/movies/{id}", app.updateMovieHandler).Methods("PATCH")
 	router.HandleFunc("/v1/movies/{id}", app.deleteMovieHandler).Methods("DELETE")
 
 	return router
