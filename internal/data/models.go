@@ -16,6 +16,6 @@ type Models struct {
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
-		Movies: MovieModel{DB: db},
+		Movies: MovieModel{Pool: db},
 	}
 }

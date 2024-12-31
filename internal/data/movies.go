@@ -34,7 +34,7 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 }
 
 type MovieModel struct {
-	DB *pgxpool.Pool
+	Pool *pgxpool.Pool
 }
 
 func (m MovieModel) Insert(movie *Movie) error {
@@ -49,7 +49,11 @@ func (m MovieModel) Insert(movie *Movie) error {
 		movie.Genres,
 	}
 
-	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+	// timeout for Pool
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return m.Pool.QueryRow(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
 func (m MovieModel) Get(id int64) (*Movie, error) {
@@ -61,8 +65,12 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 		FROM movies
 		WHERE id = $1`
 
+	// timeout for Pool
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	var movie Movie
-	err := m.DB.QueryRow(context.Background(), query, id).Scan(
+	err := m.Pool.QueryRow(ctx, query, id).Scan(
 		&movie.ID,
 		&movie.CreatedAt,
 		&movie.Title,
@@ -99,7 +107,11 @@ func (m MovieModel) Update(movie *Movie) error {
 		movie.Version,
 	}
 
-	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.Version)
+	// timeout for Pool
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.Pool.QueryRow(ctx, query, args...).Scan(&movie.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -119,7 +131,11 @@ func (m MovieModel) Delete(id int64) error {
 
 	query := `DELETE FROM movies WHERE id = $1`
 
-	result, err := m.DB.Exec(context.Background(), query, id)
+	// timeout for Pool
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.Pool.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

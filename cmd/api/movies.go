@@ -40,7 +40,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Insert movie in DB
+	// Insert movie in Pool
 	err = app.models.Movies.Insert(movie)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -66,7 +66,7 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get movie from DB
+	// Get movie from Pool
 	movie, err := app.models.Movies.Get(id)
 	if err != nil {
 		switch {
@@ -94,7 +94,7 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Fetch the existing movie record from the DB
+	// Fetch the existing movie record from the Pool
 	movie, err := app.models.Movies.Get(id)
 	if err != nil {
 		switch {
@@ -178,7 +178,7 @@ func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Delete movie from DB
+	// Delete movie from Pool
 	err = app.models.Movies.Delete(id)
 	if err != nil {
 		switch {
