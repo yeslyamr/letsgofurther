@@ -7,7 +7,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"letsgofurther/internal/data"
-	"log"
+	"letsgofurther/internal/jsonlog"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -28,7 +29,6 @@ type config struct {
 
 type application struct {
 	config config
-	logger *log.Logger
 	models data.Models
 }
 
@@ -45,34 +45,36 @@ func main() {
 	flag.Parse()
 
 	// Setting up logger
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	jsonHandler := jsonlog.Init()
 
 	// Establishing a connection pool
 	db, err := openDB(cfg)
 	if err != nil {
-		logger.Fatal(err)
+		jsonlog.Fatal(err, nil)
 	}
 	defer db.Close()
 
-	logger.Printf("database connection pool established")
-
+	jsonlog.Info("database connection pool established", nil)
 	app := &application{
 		config: cfg,
-		logger: logger,
 		models: data.NewModels(db),
 	}
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
 		Handler:      app.routes(),
+		ErrorLog:     slog.NewLogLogger(jsonHandler, slog.LevelError),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
+	jsonlog.Info("starting server", map[string]string{
+		"addr": srv.Addr,
+		"env":  cfg.env,
+	})
 	err = srv.ListenAndServe()
-	logger.Fatal(err)
+	jsonlog.Fatal(err, nil)
 }
 
 func openDB(cfg config) (*pgxpool.Pool, error) {
