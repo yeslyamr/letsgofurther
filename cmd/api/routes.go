@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (app *application) routes() *mux.Router {
+func (app *application) routes() http.Handler {
 	router := mux.NewRouter()
 
 	router.MethodNotAllowedHandler = http.HandlerFunc(app.methodNotAllowedResponse)
@@ -19,5 +19,5 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/v1/movies/{id}", app.updateMovieHandler).Methods("PATCH")
 	router.HandleFunc("/v1/movies/{id}", app.deleteMovieHandler).Methods("DELETE")
 
-	return router
+	return app.recoverPanic(router)
 }
