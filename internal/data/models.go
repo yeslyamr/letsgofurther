@@ -12,10 +12,12 @@ var (
 
 type Models struct {
 	Movies MovieModel
+	Users  UserModel
 }
 
-func NewModels(db *pgxpool.Pool) Models {
+func NewModels(pool *pgxpool.Pool) Models {
 	return Models{
-		Movies: MovieModel{Pool: db},
+		Movies: MovieModel{Pool: pool},
+		Users:  UserModel{Pool: pool},
 	}
 }
