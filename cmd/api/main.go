@@ -3,13 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"letsgofurther/internal/data"
 	"letsgofurther/internal/jsonlog"
-	"log/slog"
-	"net/http"
 	"os"
 	"time"
 )
@@ -60,21 +57,10 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		ErrorLog:     slog.NewLogLogger(jsonHandler, slog.LevelError),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
+	err = app.serve(jsonHandler)
+	if err != nil {
+		jsonlog.Fatal(err, nil)
 	}
-
-	jsonlog.Info("starting server", map[string]string{
-		"addr": srv.Addr,
-		"env":  cfg.env,
-	})
-	err = srv.ListenAndServe()
-	jsonlog.Fatal(err, nil)
 }
 
 func openDB(cfg config) (*pgxpool.Pool, error) {
