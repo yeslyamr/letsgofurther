@@ -20,6 +20,7 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("/v1/movies/{id}", app.deleteMovieHandler).Methods("DELETE")
 
 	router.HandleFunc("/v1/users", app.registerUserHandler).Methods("POST")
+	router.HandleFunc("/v1/users/activated", app.activateUserHandler).Methods("PUT")
 
 	return app.recoverPanic(app.rateLimit(router))
 }
