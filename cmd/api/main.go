@@ -7,7 +7,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"letsgofurther/internal/data"
 	"letsgofurther/internal/jsonlog"
+	"letsgofurther/internal/mailer"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -22,11 +24,20 @@ type config struct {
 		maxIdleConns int
 		maxIdleTime  string
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 type application struct {
 	config config
 	models data.Models
+	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -39,6 +50,14 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
+
+	// SMTP server configs
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "a51d1e8c314467", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "756c69aa5b692d", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.net>", "SMTP sender")
+
 	flag.Parse()
 
 	// Setting up logger
@@ -55,6 +74,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve(jsonHandler)
