@@ -11,15 +11,17 @@ var (
 )
 
 type Models struct {
-	Movies MovieModel
-	Users  UserModel
-	Tokens TokenModel
+	Movies      MovieModel
+	Users       UserModel
+	Tokens      TokenModel
+	Permissions PermissionModel
 }
 
 func NewModels(pool *pgxpool.Pool) Models {
 	return Models{
-		Movies: MovieModel{Pool: pool},
-		Users:  UserModel{Pool: pool},
-		Tokens: TokenModel{Pool: pool},
+		Movies:      MovieModel{Pool: pool},
+		Users:       UserModel{Pool: pool},
+		Tokens:      TokenModel{Pool: pool},
+		Permissions: PermissionModel{Pool: pool},
 	}
 }

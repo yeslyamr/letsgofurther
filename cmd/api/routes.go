@@ -13,14 +13,11 @@ func (app *application) routes() http.Handler {
 
 	router.HandleFunc("/v1/healthcheck", app.healthcheckHandler).Methods("GET")
 
-	moviesSubrouter := router.PathPrefix("/v1/movies").Subrouter()
-
-	moviesSubrouter.HandleFunc("/", app.listMoviesHandler).Methods("GET")
-	moviesSubrouter.HandleFunc("/", app.createMovieHandler).Methods("POST")
-	moviesSubrouter.HandleFunc("/{id}", app.showMovieHandler).Methods("GET")
-	moviesSubrouter.HandleFunc("/{id}", app.updateMovieHandler).Methods("PATCH")
-	moviesSubrouter.HandleFunc("/{id}", app.deleteMovieHandler).Methods("DELETE")
-	moviesSubrouter.Use(app.requireActivatedUser)
+	router.Handle("/v1/movies", app.requirePermission("movies:read", app.listMoviesHandler)).Methods("GET")
+	router.Handle("/v1/movies", app.requirePermission("movies:write", app.createMovieHandler)).Methods("POST")
+	router.Handle("/v1/movies/{id}", app.requirePermission("movies:read", app.showMovieHandler)).Methods("GET")
+	router.Handle("/v1/movies/{id}", app.requirePermission("movies:write", app.updateMovieHandler)).Methods("PATCH")
+	router.Handle("/v1/movies/{id}", app.requirePermission("movies:write", app.deleteMovieHandler)).Methods("DELETE")
 
 	router.HandleFunc("/v1/users", app.registerUserHandler).Methods("POST")
 	router.HandleFunc("/v1/users/activated", app.activateUserHandler).Methods("PUT")
