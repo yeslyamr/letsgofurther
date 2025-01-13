@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"flag"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -9,6 +10,7 @@ import (
 	"letsgofurther/internal/jsonlog"
 	"letsgofurther/internal/mailer"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -69,8 +71,25 @@ func main() {
 		jsonlog.Fatal(err, nil)
 	}
 	defer db.Close()
-
 	jsonlog.Info("database connection pool established", nil)
+
+	// Metrics
+	expvar.Publish("goroutines", expvar.Func(func() interface{} {
+		return runtime.NumGoroutine()
+	}))
+	expvar.Publish("database", expvar.Func(func() interface{} {
+		stat := db.Stat()
+		return map[string]interface{}{
+			"MaxConns":        stat.MaxConns(),
+			"OpenConnections": stat.TotalConns(),
+			"InUse":           stat.AcquiredConns(),
+			"Idle":            stat.IdleConns(),
+		}
+	}))
+	expvar.Publish("timestamp", expvar.Func(func() interface{} {
+		return time.Now().Unix()
+	}))
+
 	app := &application{
 		config: cfg,
 		models: data.NewModels(db),

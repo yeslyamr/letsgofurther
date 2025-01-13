@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -10,7 +11,6 @@ func (app *application) routes() http.Handler {
 
 	router.MethodNotAllowedHandler = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.NotFoundHandler = http.HandlerFunc(app.notFoundResponse)
-	router.Methods(http.MethodOptions)
 
 	router.HandleFunc("/v1/healthcheck", app.healthcheckHandler).Methods(http.MethodGet)
 
@@ -24,10 +24,7 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("/v1/users/activated", app.activateUserHandler).Methods(http.MethodPut)
 	router.HandleFunc("/v1/users/authentication", app.createAuthenticationTokenHandler).Methods(http.MethodPost)
 
-	router.Use(app.recoverPanic)
-	router.Use(app.enableCORS)
-	router.Use(app.rateLimit)
-	router.Use(app.authenticate)
+	router.Handle("/debug/vars", expvar.Handler()).Methods(http.MethodGet)
 
-	return router
+	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 }

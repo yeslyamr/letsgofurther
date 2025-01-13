@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
+	"expvar"
 	"fmt"
+	"github.com/felixge/httpsnoop"
 	"golang.org/x/time/rate"
 	"letsgofurther/internal/data"
 	"letsgofurther/internal/validator"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -187,5 +190,41 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) metrics(next http.Handler) http.Handler {
+	totalRequestsReceived := expvar.Get("total_requests_received")
+	if totalRequestsReceived == nil {
+		totalRequestsReceived = expvar.NewInt("total_requests_received")
+	}
+
+	totalResponsesSent := expvar.Get("total_responses_sent")
+	if totalResponsesSent == nil {
+		totalResponsesSent = expvar.NewInt("total_responses_sent")
+	}
+
+	totalProcessingTimeMicroseconds := expvar.Get("total_processing_time_μs")
+	if totalProcessingTimeMicroseconds == nil {
+		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
+	}
+
+	totalResponsesSentByStatus := expvar.Get("total_responses_sent_by_status")
+	if totalResponsesSentByStatus == nil {
+		totalResponsesSentByStatus = expvar.NewMap("total_responses_sent_by_status")
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		totalRequestsReceived.(*expvar.Int).Add(1)
+
+		metrics := httpsnoop.CaptureMetrics(next, w, r)
+
+		next.ServeHTTP(w, r)
+
+		totalResponsesSent.(*expvar.Int).Add(1)
+
+		totalProcessingTimeMicroseconds.(*expvar.Int).Add(metrics.Duration.Microseconds())
+
+		totalResponsesSentByStatus.(*expvar.Map).Add(strconv.Itoa(metrics.Code), 1)
 	})
 }
